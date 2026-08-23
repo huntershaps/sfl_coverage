@@ -1,0 +1,46 @@
+{
+  "name": "sfi-coverage",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 4310",
+    "build": "next build",
+    "start": "next start -p 4310",
+    "seed": "tsx scripts/seed.ts",
+    "lint": "next lint",
+    "seed:demo": "tsx scripts/seed.ts --demo",
+    "seed:reset": "tsx scripts/seed.ts --reset",
+    "seed:clear-demo": "tsx scripts/seed.ts --clear-demo",
+    "test:authz": "tsx --conditions=react-server scripts/test-authz.ts",
+    "test:parser": "tsx scripts/test-parser.ts",
+    "typecheck": "tsc --noEmit",
+    "test:e2e": "tsx --conditions=react-server scripts/test-e2e.ts",
+    "test:accounts": "tsx scripts/test-accounts.ts",
+    "test:accounts:remove": "tsx scripts/test-accounts.ts --remove",
+    "test": "tsc --noEmit && tsx scripts/test-parser.ts && tsx scripts/test-prose.ts && tsx --conditions=react-server scripts/test-filters.ts && tsx --conditions=react-server scripts/test-security.ts && tsx --conditions=react-server scripts/test-e2e.ts && tsx --conditions=react-server scripts/test-authz.ts",
+    "test:prose": "tsx scripts/test-prose.ts",
+    "test:filters": "tsx --conditions=react-server scripts/test-filters.ts",
+    "backup": "tsx scripts/backup.ts",
+    "test:security": "tsx --conditions=react-server scripts/test-security.ts"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.10.0",
+    "next": "^16.3.2",
+    "react": "19.1.1",
+    "react-dom": "19.1.1",
+    "server-only": "^0.0.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.13",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^22.15.0",
+    "@types/react": "^19.1.9",
+    "@types/react-dom": "^19.1.7",
+    "tailwindcss": "^4.1.13",
+    "tsx": "^4.23.12",
+    "typescript": "^5.8.3"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

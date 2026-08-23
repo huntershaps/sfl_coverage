@@ -1,0 +1,238 @@
+@import "tailwindcss";
+
+/* ==========================================================================
+   South Florida Insider — Coverage Desk
+   Light, bright and coastal: ocean blue and Miami teal against an airy
+   blue-grey canvas, with coral and sunshine for energy. Reads like a modern
+   media company, not an admin panel.
+   ========================================================================== */
+
+@theme {
+  /* --- Brand: bright ocean blue (primary) --- */
+  --color-brand-50: #eaf7fd;
+  --color-brand-100: #cfeefb;
+  --color-brand-200: #a3ddf6;
+  --color-brand-300: #66c7ef;
+  --color-brand-400: #2aade4;
+  --color-brand-500: #009bd6;
+  --color-brand-600: #0079ab;   /* white text clears AA on this step */
+  --color-brand-700: #016892;
+
+  /* --- Miami teal (secondary) --- */
+  --color-teal-50: #e4faf5;
+  --color-teal-100: #c2f3e8;
+  --color-teal-200: #8ae8d4;
+  --color-teal-300: #45d8bb;
+  --color-teal-400: #00c9a7;
+  --color-teal-500: #04ab8f;
+  --color-teal-600: #0a8a74;
+  --color-teal-700: #076b59;
+
+  /* --- Sunset coral (energetic accent) --- */
+  --color-coral-50: #fff1f1;
+  --color-coral-100: #ffdede;
+  --color-coral-200: #ffbfbf;
+  --color-coral-300: #ff9797;
+  --color-coral-400: #ff6b6b;
+  --color-coral-500: #ef4f4f;
+  --color-coral-600: #d13a3a;
+  --color-coral-700: #a82f2f;
+
+  /* --- Sunshine (highlights) --- */
+  --color-sunshine-50: #fff9e6;
+  --color-sunshine-100: #ffefbf;
+  --color-sunshine-200: #ffe28c;
+  --color-sunshine-300: #ffd24d;
+  --color-sunshine-400: #ffc107;
+  --color-sunshine-500: #eaa900;
+  --color-sunshine-600: #c08a00;
+  --color-sunshine-700: #8a6200;
+
+  /* --- Neutrals --- */
+  --color-canvas: #f1f5fa;
+  --color-card: #ffffff;
+  --color-sunken: #e8eef6;
+  --color-line: #dfe6f0;
+  --color-line-strong: #cbd6e6;
+
+  /* Text ramp. Every level clears WCAG AA on white and on the canvas tint. */
+  --color-ink: #0f172a;   /* primary   16.9:1 */
+  --color-body: #475569;  /* secondary  7.5:1 */
+  --color-slate: #5a6b81; /* tertiary   AA on card and canvas */
+
+  --font-display: var(--font-bricolage), "Inter", system-ui, sans-serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+
+  --radius-card: 16px;
+
+  --animate-rise: rise 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-fade: fade 0.3s ease both;
+  --animate-shimmer: shimmer 1.6s linear infinite;
+
+  /* Soft, low-contrast elevation — light UI needs lift, not drama. */
+  --shadow-card: 0 1px 2px rgb(15 23 42 / 0.04), 0 4px 12px -4px rgb(15 23 42 / 0.06);
+  --shadow-lift: 0 2px 4px rgb(15 23 42 / 0.05), 0 12px 28px -10px rgb(15 23 42 / 0.12);
+  --shadow-pop: 0 8px 20px -6px rgb(15 23 42 / 0.14), 0 24px 48px -20px rgb(15 23 42 / 0.2);
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes shimmer {
+  from { background-position: -450px 0; }
+  to { background-position: 450px 0; }
+}
+
+/* --------------------------------- base ---------------------------------
+   Wrapped in @layer base so utility classes still win. Unlayered rules beat
+   every layered one, which silently overrode text sizes and border colours.
+   ------------------------------------------------------------------------ */
+
+@layer base {
+  * {
+    border-color: var(--color-line);
+  }
+
+  html {
+    color-scheme: light;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100dvh;
+  }
+
+  ::selection {
+    background: color-mix(in oklab, var(--color-brand-500) 22%, transparent);
+    color: var(--color-ink);
+  }
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    letter-spacing: -0.021em;
+    line-height: 1.12;
+    font-weight: 700;
+    color: var(--color-ink);
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-line-strong) transparent;
+  }
+  *::-webkit-scrollbar { width: 10px; height: 10px; }
+  *::-webkit-scrollbar-track { background: transparent; }
+  *::-webkit-scrollbar-thumb {
+    background: var(--color-line-strong);
+    border-radius: 99px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+  *::-webkit-scrollbar-thumb:hover { background-color: #b9c5da; background-clip: content-box; }
+
+  :focus-visible {
+    outline: 2px solid var(--color-brand-500);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+
+  input, textarea, select, button { font: inherit; }
+  input::placeholder, textarea::placeholder { color: var(--color-slate); }
+
+  /* Dates and counts line up in tables and cards. */
+  .tnum { font-variant-numeric: tabular-nums; }
+}
+
+/* ------------------------------ components ------------------------------ */
+
+@layer components {
+  /* The default card: white, hairline border, soft shadow. */
+  .surface {
+    background: var(--color-card);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+  }
+
+  /* For cards that should sit a little above the rest of the page. */
+  .surface-raised {
+    background: var(--color-card);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-lift);
+  }
+
+  .hairline { border-bottom: 1px solid var(--color-line); }
+
+  /* Small caps label, used only for nav group headers. */
+  .eyebrow {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+    color: var(--color-slate);
+  }
+
+  .link-quiet { color: var(--color-body); transition: color 0.15s ease; }
+  .link-quiet:hover { color: var(--color-brand-600); }
+
+  .skeleton {
+    background: linear-gradient(
+      90deg,
+      #eef2f8 25%,
+      #f7fafd 50%,
+      #eef2f8 75%
+    );
+    background-size: 450px 100%;
+    animation: var(--animate-shimmer);
+    border-radius: 8px;
+  }
+
+  /* The soft tinted square behind a metric or section icon. */
+  .icon-tile {
+    display: grid;
+    place-items: center;
+    border-radius: 12px;
+  }
+
+  /* Generated event artwork: a deterministic pastel mesh, used wherever no
+     real poster image has been supplied. */
+  .poster-mesh {
+    background-image:
+      radial-gradient(circle at 18% 16%, var(--mesh-a), transparent 48%),
+      radial-gradient(circle at 84% 24%, var(--mesh-b), transparent 46%),
+      radial-gradient(circle at 46% 96%, var(--mesh-c), transparent 54%);
+    background-color: #eef4fa;
+  }
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+  .text-balance { text-wrap: balance; }
+  .text-pretty { text-wrap: pretty; }
+
+  /* Fades the right edge of a horizontally scrolling filter rail. */
+  .mask-fade-r {
+    mask-image: linear-gradient(to right, black calc(100% - 28px), transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

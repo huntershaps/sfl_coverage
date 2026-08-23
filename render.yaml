@@ -1,0 +1,25 @@
+# Render — one-click alternative to Fly. Same shape: one instance, one disk.
+services:
+  - type: web
+    name: sfi-coverage-desk
+    runtime: docker
+    plan: starter          # Free tier sleeps and has no disk; starter does not.
+    region: ohio
+    healthCheckPath: /api/health
+    # SQLite has a single writer — never raise this above 1.
+    numInstances: 1
+    disk:
+      name: sfi-data
+      mountPath: /data
+      sizeGB: 1
+    envVars:
+      - key: DATABASE_PATH
+        value: /data/sfi.db
+      - key: SUPER_ADMIN_EMAIL
+        value: shaps@sflinsider.com
+      - key: APP_URL
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: MAIL_FROM
+        sync: false

@@ -1,0 +1,40 @@
+# Fly.io — cheapest way to keep this on 24/7 with a real persistent disk.
+#   fly launch --no-deploy      (creates the app)
+#   fly volumes create sfi_data --size 1 --region mia
+#   fly secrets set SUPER_ADMIN_EMAIL=shaps@sflinsider.com APP_URL=https://<app>.fly.dev
+#   fly deploy
+
+app = "sfi-coverage-desk"
+primary_region = "mia"          # Miami — closest region to the team
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  PORT = "3000"
+  DATABASE_PATH = "/data/sfi.db"
+  MAIL_NOTIFICATIONS = "on"
+
+# The database lives here. Without this the DB is wiped on every deploy.
+[[mounts]]
+  source = "sfi_data"
+  destination = "/data"
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  # SQLite means one writer, so this must never scale past a single machine.
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [[http_service.checks]]
+    grace_period = "20s"
+    interval = "30s"
+    method = "GET"
+    path = "/api/health"
+    timeout = "5s"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"

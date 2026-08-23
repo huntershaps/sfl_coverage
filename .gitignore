@@ -1,0 +1,23 @@
+node_modules
+.next
+out
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+.env*.local
+public/uploads/*
+!public/uploads/.gitkeep
+
+# Local database and backups
+data/
+backups/
+*.db
+*.db-wal
+*.db-shm
+.env
+.env.local
+
+# Build artifacts
+tsconfig.tsbuildinfo
+*.tsbuildinfo

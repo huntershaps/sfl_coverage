@@ -1,0 +1,14 @@
+node_modules
+.next
+.git
+.gitignore
+data
+*.db
+*.db-wal
+*.db-shm
+backups
+npm-debug.log*
+.env
+.env.local
+README.md
+scripts/check-issues.ts
