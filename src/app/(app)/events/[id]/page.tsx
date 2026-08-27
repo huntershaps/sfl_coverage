@@ -33,6 +33,8 @@ import {
 } from "@/components/events/badges";
 import { RequestCoverageButton, WithdrawButton } from "@/components/events/request-dialog";
 import { CoverItMyselfButton } from "@/components/events/cover-myself";
+import { EventTime, EventTimeDetail } from "@/components/events/event-time";
+import { EventLinks, TicketLink, hasAnyLink } from "@/components/events/event-links";
 import { GuestBadge } from "@/components/guest-picker";
 import { EventAdminPanel } from "@/components/events/event-admin-panel";
 import {
@@ -217,7 +219,7 @@ export default async function EventDetailPage({
               </span>
               <span className="flex items-center gap-2">
                 <IconClock size={17} className="text-brand-500" />
-                <span className="tnum">{fmtTime(ev.start_datetime, ev.time_tbd)}</span>
+                <EventTime ev={ev} size="md" />
               </span>
               {ev.venue && (
                 <span className="flex items-center gap-2">
@@ -246,6 +248,12 @@ export default async function EventDetailPage({
               isAdminViewer={admin}
               isSuperAdminViewer={isSuperAdmin(user)}
             />
+
+            {hasAnyLink(ev) && (
+              <Card className="p-5 sm:p-6">
+                <EventLinks ev={ev} />
+              </Card>
+            )}
 
             {ev.description && (
               <Card className="p-5 sm:p-6">
@@ -451,12 +459,7 @@ export default async function EventDetailPage({
                   )}
                 </Detail>
                 <Detail label="Time">
-                  {fmtTime(ev.start_datetime, ev.time_tbd)}
-                  {ev.time_tbd ? (
-                    <span className="block text-[12px] text-slate">
-                      Showtime not listed in the source — confirm with the venue.
-                    </span>
-                  ) : null}
+                  <EventTimeDetail ev={ev} />
                 </Detail>
                 {ev.venue && <Detail label="Venue">{ev.venue}</Detail>}
                 {ev.address && <Detail label="Address">{ev.address}</Detail>}
@@ -487,15 +490,8 @@ export default async function EventDetailPage({
                 </Detail>
               </dl>
 
-              {ev.ticket_url && (
-                <a
-                  href={ev.ticket_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-canvas px-4 py-2.5 text-[13.5px] font-semibold text-ink ring-1 ring-inset ring-line transition-colors hover:bg-line-strong"
-                >
-                  <IconTicket size={16} /> Tickets &amp; info
-                </a>
+              {ev.ticket_url && !hasAnyLink(ev) && (
+                <TicketLink href={ev.ticket_url} className="mt-4" />
               )}
 
               {ev.source_note && (

@@ -8,6 +8,7 @@ import {
 } from "./badges";
 import { IconPin, IconClock } from "@/components/ui";
 import { posterStyle, dayParts, fmtTime, relativeDay, cx, fmtDate } from "@/lib/ui";
+import { EventTime } from "./event-time";
 import type { EventStatus } from "@/lib/constants";
 
 type CardEvent = EventWithCoverage & { limit?: number | null };
@@ -112,7 +113,7 @@ export function EventCard({
           )}
           <p className="flex items-center gap-1.5">
             <IconClock size={14} className="shrink-0 text-slate" />
-            <span className="tnum">{fmtTime(ev.start_datetime, ev.time_tbd)}</span>
+            <EventTime ev={ev} size="sm" />
           </p>
         </div>
 
@@ -190,7 +191,7 @@ export function EventRow({ ev, limit }: { ev: CardEvent; limit?: number | null }
         </h3>
 
         <p className="mt-0.5 line-clamp-1 text-[12.5px] text-slate">
-          <span className="tnum">{fmtTime(ev.start_datetime, ev.time_tbd)}</span>
+          <EventTime ev={ev} size="sm" />
           {ev.venue && ` · ${ev.venue}`}
           {ev.city && ` · ${ev.city}`}
         </p>
@@ -248,7 +249,7 @@ export function MiniEventCard({
           {ev.title}
         </h4>
         <p className="mt-0.5 line-clamp-1 text-[12px] text-slate">
-          <span className="tnum">{fmtTime(ev.start_datetime, ev.time_tbd)}</span>
+          <EventTime ev={ev} size="sm" />
           {ev.venue && ` · ${ev.venue}`}
         </p>
         {footer && <div className="mt-1.5">{footer}</div>}

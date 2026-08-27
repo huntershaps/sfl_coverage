@@ -220,6 +220,9 @@ export function quickRange(
   const dow = d0.getDay();
 
   switch (quick) {
+    // "Tonight" is the same day as "Today" — the evening cut is applied by the
+    // caller, since a date window alone cannot express a time of day.
+    case "tonight":
     case "today":
       return { from: iso(d0), to: iso(d0) };
     // Weeks run Monday–Sunday, so on a Sunday "this week" ends today rather
@@ -266,6 +269,12 @@ export function listEvents(
   const range = { ...quickRange(filters.quick) };
   const from = filters.from || range.from;
   const to = filters.to || range.to;
+
+  // "Tonight" narrows today to the evening. Events with no listed time are kept
+  // — most of the board is Time TBD, and hiding them would make the view lie.
+  if (filters.quick === "tonight") {
+    where.push("(e.time_tbd = 1 OR time(e.start_datetime) >= time('16:00'))");
+  }
 
   if (filters.scope === "past") {
     where.push("date(e.start_datetime) < date('now')");

@@ -14,6 +14,7 @@ import {
   IconCalendar,
 } from "@/components/ui";
 import { CategoryBadge, CoverageTypeBadge } from "@/components/events/badges";
+import { EventTime } from "@/components/events/event-time";
 import { GuestBadge } from "@/components/guest-picker";
 import { EventCalendar } from "@/components/events/calendar";
 import {
@@ -232,7 +233,7 @@ function AssignmentCard({ a }: { a: Assignment }) {
           <div className="mt-2 space-y-1 text-[13px] text-body">
             <p className="flex items-center gap-1.5">
               <IconClock size={14} className="shrink-0 text-slate" />
-              <span className="tnum">{fmtTime(a.start_datetime, a.time_tbd)}</span>
+              <EventTime ev={a} size="md" />
               {a.multi_day_end && (
                 <span className="text-slate">
                   · runs through {fmtDate(a.multi_day_end, "long")}

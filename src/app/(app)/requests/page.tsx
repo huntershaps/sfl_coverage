@@ -16,9 +16,13 @@ import { fmtDate, fmtTime, fmtAgo, posterStyle, cx } from "@/lib/ui";
 import {
   COVERAGE_TYPE_LABEL,
   REQUEST_STATUS_MESSAGE,
+  CREDENTIAL_STATUS_LABEL,
+  CREDENTIAL_STATUS_ICON,
+  REQUEST_GROUPS,
   type RequestStatus,
   type CoverageType,
 } from "@/lib/constants";
+import { EventTime } from "@/components/events/event-time";
 
 export const metadata = { title: "My Requests" };
 export const dynamic = "force-dynamic";
@@ -80,13 +84,20 @@ export default async function MyRequestsPage({
   const closed = rows.filter((r) => !OPEN.includes(r.status));
   const visible = tab === "closed" ? closed : open;
 
+  // Grouped by what the contributor needs to know, rather than one flat list
+  // where "Pending" and "Not approved" sit side by side.
+  const groups = REQUEST_GROUPS.map((g) => ({
+    ...g,
+    rows: visible.filter((r) => (g.statuses as RequestStatus[]).includes(r.status)),
+  })).filter((g) => g.rows.length > 0);
+
   return (
     <div className="mx-auto max-w-[900px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
       <header className="mb-6">
         <h1 className="text-[30px] sm:text-[36px] text-ink">My requests</h1>
         <p className="mt-1.5 max-w-[58ch] text-[14px] text-slate text-pretty">
-          Everything you&apos;ve asked to cover, and where each one stands. The
-          Super Admin has the final say on all of them.
+          Every credential you&apos;ve asked for, and exactly where it stands.
+          The Super Admin has the final say on all of them.
         </p>
       </header>
 
@@ -132,9 +143,24 @@ export default async function MyRequestsPage({
           )}
         </Card>
       ) : (
-        <div className="space-y-3">
-          {visible.map((r) => (
-            <RequestCard key={r.id} r={r} />
+        <div className="space-y-8">
+          {groups.map((g) => (
+            <section key={g.key}>
+              <div className="mb-3">
+                <h2 className="flex items-baseline gap-2 text-[18px] text-ink">
+                  {g.title}
+                  <span className="tnum text-[13px] font-normal text-slate">
+                    {g.rows.length}
+                  </span>
+                </h2>
+                <p className="mt-0.5 text-[12.5px] text-slate">{g.blurb}</p>
+              </div>
+              <div className="space-y-3">
+                {g.rows.map((r) => (
+                  <RequestCard key={r.id} r={r} />
+                ))}
+              </div>
+            </section>
           ))}
         </div>
       )}
@@ -188,12 +214,11 @@ function RequestCard({ r }: { r: Row }) {
             </h2>
           </Link>
 
-          <p className="mt-0.5 text-[12.5px] text-slate">
-            <span className="tnum">
-              {fmtDate(r.start_datetime, "long")} · {fmtTime(r.start_datetime, r.time_tbd)}
-            </span>
-            {r.venue && ` · ${r.venue}`}
-            {r.city && ` · ${r.city}`}
+          <p className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1 text-[12.5px] text-slate">
+            <span className="tnum">{fmtDate(r.start_datetime, "long")}</span>
+            <EventTime ev={r} size="sm" />
+            {r.venue && <span>· {r.venue}</span>}
+            {r.city && <span>· {r.city}</span>}
           </p>
 
           <p className="mt-2.5 text-[12.5px] text-body">
@@ -223,8 +248,10 @@ function RequestCard({ r }: { r: Row }) {
                     : "bg-amber-50 text-amber-700 ring-amber-200",
             )}
           >
-            {REQUEST_STATUS_MESSAGE[r.status]}
-            {r.status === "pending" && " It's pending Super Admin approval."}
+            <span className="block font-semibold">
+              {CREDENTIAL_STATUS_ICON[r.status]} {CREDENTIAL_STATUS_LABEL[r.status]}
+            </span>
+            <span className="mt-0.5 block">{REQUEST_STATUS_MESSAGE[r.status]}</span>
             {r.decision_note && (
               <span className="mt-1.5 block border-t border-current/15 pt-1.5 italic opacity-90">
                 “{r.decision_note}”

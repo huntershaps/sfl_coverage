@@ -63,6 +63,13 @@ export const REQUEST_STATUSES = [
 ] as const;
 export type RequestStatus = (typeof REQUEST_STATUSES)[number];
 
+/**
+ * What a request is called where an admin sees it.
+ *
+ * Contributors see the credential wording below instead: "Pending" on its own
+ * does not tell someone whether anybody has looked at their request yet, which
+ * is the thing they actually want to know.
+ */
 export const REQUEST_STATUS_LABEL: Record<RequestStatus, string> = {
   pending: "Pending",
   under_review: "Under Review",
@@ -73,16 +80,78 @@ export const REQUEST_STATUS_LABEL: Record<RequestStatus, string> = {
   cancelled: "Cancelled",
 };
 
+/** The same states in the language contributors use: credentials. */
+export const CREDENTIAL_STATUS_LABEL: Record<RequestStatus, string> = {
+  pending: "Credential Requested",
+  under_review: "Waiting for Approval",
+  approved: "Credential Approved",
+  rejected: "Credential Not Approved",
+  waitlisted: "Waitlisted",
+  withdrawn: "Withdrawn",
+  cancelled: "Cancelled",
+};
+
 /** Contributor-facing copy for each request state. Deliberately non-harsh on rejection. */
 export const REQUEST_STATUS_MESSAGE: Record<RequestStatus, string> = {
-  pending: "Your request to cover this event has been submitted.",
-  under_review: "Your request is currently being reviewed.",
+  pending:
+    "Your request to cover this event has been submitted and is waiting for approval.",
+  under_review:
+    "Someone at the desk is looking at your request now. You'll hear either way.",
   approved: "You have been approved to cover this event.",
   rejected: "This one went another direction. Thanks for putting your name in.",
-  waitlisted: "You're on the waitlist. We'll reach out if a spot opens up.",
+  waitlisted:
+    "You're on the waitlist. If a spot opens up on this event, you're first in line.",
   withdrawn: "You withdrew this request.",
   cancelled: "This request was cancelled.",
 };
+
+/** Emoji marker used alongside credential status, per the Phase 2 brief. */
+export const CREDENTIAL_STATUS_ICON: Record<RequestStatus, string> = {
+  pending: "🎫",
+  under_review: "⏳",
+  approved: "✅",
+  rejected: "❌",
+  waitlisted: "📋",
+  withdrawn: "↩️",
+  cancelled: "—",
+};
+
+/**
+ * How a contributor's open requests are grouped on My Requests. Order matters:
+ * the things needing their attention come first.
+ */
+export const REQUEST_GROUPS = [
+  {
+    key: "waiting",
+    title: "Waiting for approval",
+    blurb: "Submitted and not yet decided.",
+    statuses: ["pending", "under_review"] as RequestStatus[],
+  },
+  {
+    key: "approved",
+    title: "Approved",
+    blurb: "You're covering these — they're on your schedule.",
+    statuses: ["approved"] as RequestStatus[],
+  },
+  {
+    key: "waitlisted",
+    title: "Waitlisted",
+    blurb: "Still possible if a spot opens up.",
+    statuses: ["waitlisted"] as RequestStatus[],
+  },
+  {
+    key: "not_approved",
+    title: "Not approved",
+    blurb: "These went another direction.",
+    statuses: ["rejected"] as RequestStatus[],
+  },
+  {
+    key: "closed",
+    title: "Withdrawn and cancelled",
+    blurb: "No longer active.",
+    statuses: ["withdrawn", "cancelled"] as RequestStatus[],
+  },
+] as const;
 
 export const COVERAGE_TYPES = [
   "photography",

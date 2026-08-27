@@ -15,6 +15,7 @@ import { EVENT_CATEGORIES, EVENT_STATUS_LABEL, EVENT_STATUSES } from "@/lib/cons
 
 const QUICK = [
   { key: "", label: "All upcoming" },
+  { key: "tonight", label: "Tonight" },
   { key: "today", label: "Today" },
   { key: "week", label: "This week" },
   { key: "weekend", label: "This weekend" },

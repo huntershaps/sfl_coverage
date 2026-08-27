@@ -159,7 +159,7 @@ export function submitRequest(
   notify({
     userId: user.id,
     type: "request.received",
-    title: "Coverage request submitted",
+    title: "Credential request submitted",
     body: `We received your request to cover ${ev.title}. It's pending Super Admin approval.`,
     href: `/events/${ev.id}`,
     eventId: ev.id,
@@ -385,7 +385,7 @@ export function decideRequest(
     notify({
       userId: requester.id,
       type: "request.approved",
-      title: `You're approved to cover ${ev.title}`,
+      title: `Credential approved 🎉 — ${ev.title}`,
       body: `${COVERAGE_TYPE_LABEL[wantType] ?? wantType}${
         guests > 0 ? `, plus ${guests} guest${guests === 1 ? "" : "s"}` : ""
       } — it's on your schedule now.${
@@ -409,18 +409,17 @@ export function decideRequest(
     }
 
     if (input.decision !== "review") {
+      const waitlisted = input.decision === "waitlist";
+      const note = input.decisionNote?.trim();
       notify({
         userId: requester.id,
         type: `request.${nextStatus}`,
-        title:
-          input.decision === "waitlist"
-            ? `You're on the waitlist for ${ev.title}`
-            : `Update on your request — ${ev.title}`,
-        body:
-          input.decisionNote?.trim() ||
-          (input.decision === "waitlist"
-            ? "We'll reach out if a spot opens up."
-            : "This one went another direction. Thanks for putting your name in."),
+        title: waitlisted
+          ? `Credential request waitlisted — ${ev.title}`
+          : `Credential not approved — ${ev.title}`,
+        body: waitlisted
+          ? `You're on the waitlist for ${ev.title}. If a spot opens up, you're first in line.${note ? ` ${note}` : ""}`
+          : `Your request to cover ${ev.title} was not approved.${note ? ` ${note}` : " Thanks for putting your name in."}`,
         href: `/requests`,
         eventId: ev.id,
       });
