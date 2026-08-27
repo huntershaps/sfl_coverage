@@ -193,6 +193,8 @@ export type EventFilters = {
   availability?: "open" | "full" | "needs" | "";
   scope?: "all" | "mine" | "requested" | "past";
   quick?: string;
+  /** Restrict to one venue record — used by the venue pages. */
+  venueId?: number;
   sort?: "soonest" | "latest" | "recent";
   limit?: number;
   offset?: number;
@@ -296,6 +298,10 @@ export function listEvents(
   if (filters.city) {
     where.push("e.city = :city");
     params.city = filters.city;
+  }
+  if (filters.venueId) {
+    where.push("e.venue_id = :venueId");
+    params.venueId = filters.venueId;
   }
   if (filters.status) {
     where.push("e.status = :status");

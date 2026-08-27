@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { createBackup } from "@/lib/backup";
 import { redirect } from "next/navigation";
 import {
   requireUser,
@@ -448,4 +449,19 @@ export async function discardImportAction(
     return fail(e);
   }
   redirect("/admin/import");
+}
+
+/* --------------------------------- backups -------------------------------- */
+
+export async function createBackupAction(): Promise<AdminResult> {
+  try {
+    const actor = await requireSuperAdmin();
+    const file = await createBackup(actor);
+    revalidatePath("/admin/backups");
+    return {
+      ok: `Backup taken — ${file.name} (${(file.bytes / 1024 / 1024).toFixed(2)} MB).`,
+    };
+  } catch (e) {
+    return fail(e);
+  }
 }

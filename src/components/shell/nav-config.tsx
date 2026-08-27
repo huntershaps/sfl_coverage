@@ -11,6 +11,8 @@ import {
   IconChart,
   IconEdit,
   IconArchive,
+  IconShield,
+  IconPin,
 } from "@/components/ui";
 import type { Role } from "@/lib/constants";
 
@@ -31,6 +33,7 @@ export function navFor(role: Role): NavSection[] {
       { href: "/dashboard", label: "Dashboard", icon: <IconHome /> },
       { href: "/events", label: "Events", icon: <IconTicket />, match: "/events" },
       { href: "/calendar", label: "Calendar", icon: <IconCalendar /> },
+      { href: "/venues", label: "Venues", icon: <IconPin /> },
       {
         href: "/requests",
         label: "My Requests",
@@ -82,6 +85,7 @@ export function navFor(role: Role): NavSection[] {
     label: "Administration",
     items: [
       { href: "/admin/activity", label: "Activity Log", icon: <IconArchive /> },
+      { href: "/admin/backups", label: "Backups", icon: <IconShield /> },
       { href: "/admin/settings", label: "Settings", icon: <IconSettings /> },
     ],
   };
