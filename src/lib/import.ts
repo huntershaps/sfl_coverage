@@ -4,7 +4,15 @@ import type { SessionUser } from "./auth";
 import { HttpError } from "./rbac";
 import { parseEventContent } from "./parse";
 import type { ParsedEvent, ParseIssue } from "./parse/coverage-doc";
+import type { EnrichedEvent } from "./parse";
 import { refreshEventStatus } from "./events";
+import { upsertVenues, linkEventsToVenues } from "./venues";
+import {
+  applyDetectedCoverage,
+  getNameMap,
+  getStarredUserId,
+} from "./import-coverage";
+import type { DetectedAssignee } from "./parse/assignees";
 import type { EventCategory } from "./constants";
 
 /* ------------------------------ google docs ------------------------------- */
@@ -166,7 +174,7 @@ export type StagedItem = {
   id: number;
   line_no: number | null;
   raw_line: string | null;
-  parsed: ParsedEvent & { category: EventCategory };
+  parsed: EnrichedEvent & { category: EventCategory };
   issues: ParseIssue[];
   duplicate_of: number | null;
   duplicate_score: number;
@@ -215,14 +223,18 @@ export function createImport(
   const importId = Number(info.lastInsertRowid);
 
   const insert = db.prepare(
-    `INSERT INTO import_items (import_id, line_no, raw_line, parsed, issues, duplicate_of, duplicate_score, decision, selected)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO import_items (import_id, line_no, raw_line, parsed, issues, duplicate_of, duplicate_score, decision, selected, detected_assignees)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   );
+
+  // The venue directory only exists in the HTML export; fold it in before the
+  // events so imported events can be linked to real venue records.
+  if (result.venues.length) upsertVenues(result.venues);
 
   let duplicates = 0;
   let incomplete = 0;
 
-  const tx = db.transaction((events: ParsedEvent[]) => {
+  const tx = db.transaction((events: EnrichedEvent[]) => {
     for (const ev of events) {
       const dup = findDuplicate({
         title: ev.title,
@@ -261,6 +273,7 @@ export function createImport(
         // nothing lands in the database without someone looking at it.
         dup ? "keep_existing" : "import",
         hasError ? 0 : 1,
+        JSON.stringify(ev.detected_assignees ?? []),
       );
     }
   });
@@ -423,16 +436,27 @@ export function commitImport(
   let updated = 0;
   let skipped = 0;
 
+  const nameMap = getNameMap(importId);
+  const starredUserId = getStarredUserId(importId);
+  const migrated = {
+    assigned: 0,
+    starred: 0,
+    backupsRecorded: 0,
+    unmapped: [] as string[],
+  };
+
   const insertEvent = db.prepare(
     `INSERT INTO events
        (title, subtitle, category, start_datetime, time_tbd, multi_day_end, venue, city,
-        address, status, legacy_assignees, source_note, import_id, created_by, description)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        address, status, legacy_assignees, source_note, import_id, created_by, description,
+        doors_time, end_time, event_url, ticket_url, festival_url, press_url,
+        is_festival, needs_reporter)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   );
 
   const tx = db.transaction(() => {
     for (const r of rows) {
-      const p = parseJson<ParsedEvent>(r.parsed as string, {} as never);
+      const p = parseJson<EnrichedEvent>(r.parsed as string, {} as never);
       const decision = r.decision as string;
 
       if (decision === "skip" || decision === "keep_existing") {
@@ -542,11 +566,42 @@ export function commitImport(
         importId,
         user.id,
         null,
+        p.doors_time ?? null,
+        p.end_time ?? null,
+        p.event_url ?? null,
+        p.ticket_url ?? null,
+        p.festival_url ?? null,
+        p.press_url ?? null,
+        p.is_festival ? 1 : 0,
+        // The doc's trailing "*": Scott is going, a reporter is still wanted.
+        p.needs_reporter ? 1 : 0,
       );
+      const newEventId = Number(info.lastInsertRowid);
       created++;
       db.prepare(
         "UPDATE import_items SET committed_at = datetime('now'), result_event_id = ? WHERE id = ?",
-      ).run(Number(info.lastInsertRowid), r.id as number);
+      ).run(newEventId, r.id as number);
+
+      // Coverage already recorded in the doc becomes real assignments, but only
+      // for names the Super Admin has mapped to accounts.
+      const detected = parseJson<DetectedAssignee[]>(
+        (r.detected_assignees as string) ?? "[]",
+        [],
+      );
+      if (detected.length || p.needs_reporter) {
+        const res = applyDetectedCoverage(user, {
+          eventId: newEventId,
+          detected,
+          needsReporter: !!p.needs_reporter,
+          nameMap,
+          starredUserId,
+        });
+        migrated.assigned += res.assigned;
+        migrated.starred += res.starred;
+        migrated.backupsRecorded += res.backupsRecorded;
+        for (const n of res.unmapped)
+          if (!migrated.unmapped.includes(n)) migrated.unmapped.push(n);
+      }
     }
 
     db.prepare("UPDATE imports SET import_status = 'completed' WHERE id = ?").run(
@@ -563,10 +618,14 @@ export function commitImport(
     summary: `${user.name} imported ${created} event${created === 1 ? "" : "s"}${
       updated ? `, updated ${updated}` : ""
     }${skipped ? `, skipped ${skipped}` : ""} (${opts.publish ? "published" : "as drafts"})`,
-    meta: { created, updated, skipped, publish: opts.publish },
+    meta: { created, updated, skipped, publish: opts.publish, migrated },
   });
 
-  return { created, updated, skipped };
+  // Newly imported events can now be attached to venue records, which is what
+  // makes a venue page able to list what is on there.
+  const linkedVenues = linkEventsToVenues();
+
+  return { created, updated, skipped, migrated, linkedVenues };
 }
 
 export function discardImport(user: SessionUser, importId: number) {

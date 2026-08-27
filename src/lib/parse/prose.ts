@@ -317,6 +317,8 @@ export function parseProseEvents(
       venue,
       city: finalCity,
       address,
+      doors_time: null,
+      end_time: null,
       legacy_assignees: null,
       needs_reporter: false,
       raw_line: c.text,

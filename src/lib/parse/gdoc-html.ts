@@ -119,9 +119,15 @@ export function parseGoogleDocHtml(html: string): {
   for (const m of body.matchAll(blockRe)) {
     const tag = m[1].toLowerCase();
     const inner = m[2];
-    const text = stripTags(inner);
+    let text = stripTags(inner);
     const links = mergeAdjacent(anchorsIn(inner));
     if (!text && !links.length) continue;
+
+    // Google renders the doc's "* " event bullets as real list items, which
+    // drops the marker the line parser keys on. Put it back so the plain text
+    // matches what the txt export produces.
+    if (tag === "li" && !/^[*•·]\s/.test(text)) text = `* ${text}`;
+
     lines.push({ text, links, inTable: tag === "td" });
   }
 

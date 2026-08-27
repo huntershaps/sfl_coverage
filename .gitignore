@@ -21,3 +21,6 @@ backups/
 # Build artifacts
 tsconfig.tsbuildinfo
 *.tsbuildinfo
+
+# Scratch database used by the migration test
+data/test-migration.db*

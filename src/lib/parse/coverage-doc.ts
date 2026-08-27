@@ -36,6 +36,9 @@ export type ParsedEvent = {
   venue: string;
   city: string | null;
   address: string | null;
+  /** Doors/opening time, separate from the show time. */
+  doors_time: string | null;
+  end_time: string | null;
   legacy_assignees: string | null;
   needs_reporter: boolean;
   raw_line: string;
@@ -145,26 +148,45 @@ export function inferCategory(title: string, venue: string): EventCategory {
 /* ------------------------------ time parsing ------------------------------ */
 
 /** Pulls a trailing time like ", 6 - 10pm" or ", 5:30" out of the venue tail. */
-function extractTime(tail: string): { time: string | null; rest: string } {
+/**
+ * Pulls a time off the end of a venue fragment.
+ *
+ * The doc writes single times ("Bryant Park, 5:30") and ranges
+ * ("Bryant Park, 6 - 10pm"). The end of a range is kept rather than discarded,
+ * since knowing an event runs until 10pm is what tells someone whether they can
+ * cover two things in one night.
+ */
+function extractTime(tail: string): {
+  time: string | null;
+  endTime: string | null;
+  rest: string;
+} {
   const re =
-    /,\s*(\d{1,2})(?::(\d{2}))?\s*(?:-\s*\d{1,2}(?::\d{2})?\s*)?(am|pm)?\s*$/i;
+    /,\s*(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\s*(?:[-–]\s*(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\s*)?$/i;
   const m = tail.match(re);
-  if (!m) return { time: null, rest: tail };
+  if (!m) return { time: null, endTime: null, rest: tail };
 
-  let hour = parseInt(m[1], 10);
-  const min = m[2] ? parseInt(m[2], 10) : 0;
-  const mer = m[3]?.toLowerCase();
+  // A trailing meridiem applies to both halves: "6 - 10pm" is 6pm to 10pm.
+  const trailingMer = (m[6] ?? m[3])?.toLowerCase();
 
-  if (mer === "pm" && hour < 12) hour += 12;
-  if (mer === "am" && hour === 12) hour = 0;
-  // No meridiem written: evening shows are the norm, so 1-11 means PM.
-  if (!mer && hour >= 1 && hour <= 11) hour += 12;
-
-  if (hour > 23 || min > 59) return { time: null, rest: tail };
-  return {
-    time: `${String(hour).padStart(2, "0")}:${String(min).padStart(2, "0")}`,
-    rest: tail.slice(0, m.index).trim(),
+  const to24 = (h: number, min: number, mer: string | undefined): string | null => {
+    let hour = h;
+    if (mer === "pm" && hour < 12) hour += 12;
+    else if (mer === "am" && hour === 12) hour = 0;
+    // No meridiem written: evening shows are the norm, so 1–11 means PM.
+    else if (!mer && hour >= 1 && hour <= 11) hour += 12;
+    if (hour > 23 || min > 59) return null;
+    return `${String(hour).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
   };
+
+  const start = to24(parseInt(m[1], 10), m[2] ? parseInt(m[2], 10) : 0, m[3]?.toLowerCase() ?? trailingMer);
+  if (!start) return { time: null, endTime: null, rest: tail };
+
+  const endTime = m[4]
+    ? to24(parseInt(m[4], 10), m[5] ? parseInt(m[5], 10) : 0, m[6]?.toLowerCase() ?? trailingMer)
+    : null;
+
+  return { time: start, endTime, rest: tail.slice(0, m.index).trim() };
 }
 
 /* -------------------------------- the parser ------------------------------- */
@@ -402,7 +424,7 @@ function buildEvent(
   }
 
   // A time can trail the venue: "Bryant Park, 6 - 10pm"
-  const { time, rest } = extractTime(venueRaw);
+  const { time, endTime, rest } = extractTime(venueRaw);
   venueRaw = rest;
 
   // Some lines carry a "ft:" or parenthetical descriptor worth keeping as subtitle.
@@ -485,6 +507,8 @@ function buildEvent(
     venue,
     city,
     address: null,
+    doors_time: null,
+    end_time: endTime,
     legacy_assignees: legacy,
     needs_reporter: needsReporter,
     raw_line: rawLine.trim(),

@@ -275,6 +275,12 @@ function addColumns(db: Database.Database) {
 
     // Unresolved contributor names from the doc, pending a mapping to accounts.
     ["import_items", "detected_assignees", "TEXT NOT NULL DEFAULT '[]'"],
+
+    // Maps names written in the doc ("Charity") to real accounts. Filled in by
+    // the Super Admin during review; nothing is assigned without it.
+    ["imports", "name_map", "TEXT NOT NULL DEFAULT '{}'"],
+    // Which account the doc's starred events belong to (Scott, in practice).
+    ["imports", "starred_user_id", "INTEGER REFERENCES users(id) ON DELETE SET NULL"],
   ];
 
   for (const [table, column, ddl] of additions) {
