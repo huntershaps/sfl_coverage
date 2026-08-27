@@ -220,6 +220,12 @@ function migrate(db: Database.Database) {
   `);
 
   addColumns(db);
+
+  // Indexes over columns that addColumns creates, so they come after it.
+  db.exec(`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_venue_slug ON venues(slug) WHERE slug IS NOT NULL;
+    CREATE INDEX IF NOT EXISTS idx_events_venue_id ON events(venue_id);
+  `);
 }
 
 /**
@@ -237,6 +243,38 @@ function addColumns(db: Database.Database) {
     ["coverage_requests", "guests_requested", "INTEGER NOT NULL DEFAULT 0"],
     // Per-person opt-out for decision emails. In-app notifications always fire.
     ["users", "email_notifications", "INTEGER NOT NULL DEFAULT 1"],
+
+    // --- Phase 2: times kept as separate fields -----------------------------
+    // start_datetime stays the canonical sort key and carries the show time;
+    // doors and end sit alongside it so nothing existing has to be rewritten.
+    ["events", "doors_time", "TEXT"],
+    ["events", "end_time", "TEXT"],
+
+    // --- Phase 2: the links the Google Doc carries --------------------------
+    ["events", "event_url", "TEXT"],
+    ["events", "festival_url", "TEXT"],
+    ["events", "press_url", "TEXT"],
+    ["events", "is_festival", "INTEGER NOT NULL DEFAULT 0"],
+
+    // Scott attending but a reporter still needed — the doc's trailing "*".
+    ["events", "needs_reporter", "INTEGER NOT NULL DEFAULT 0"],
+    ["events", "venue_id", "INTEGER REFERENCES venues(id) ON DELETE SET NULL"],
+
+    // --- Phase 2: venue directory ------------------------------------------
+    ["venues", "slug", "TEXT"],
+    ["venues", "website", "TEXT"],
+    ["venues", "events_url", "TEXT"],
+    ["venues", "press_url", "TEXT"],
+    ["venues", "maps_url", "TEXT"],
+    ["venues", "image_url", "TEXT"],
+    ["venues", "updated_at", "TEXT"],
+
+    // Where an assignment came from: a decided request, a direct assignment,
+    // or migration of existing coverage out of the Google Doc.
+    ["assignments", "source", "TEXT NOT NULL DEFAULT 'request'"],
+
+    // Unresolved contributor names from the doc, pending a mapping to accounts.
+    ["import_items", "detected_assignees", "TEXT NOT NULL DEFAULT '[]'"],
   ];
 
   for (const [table, column, ddl] of additions) {
