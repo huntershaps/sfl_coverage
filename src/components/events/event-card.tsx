@@ -117,9 +117,11 @@ export function EventCard({
           </p>
         </div>
 
-        <div className="mt-auto flex items-center justify-between gap-2 pt-3.5">
+        {/* Status badges never wrap their own text, so the row has to be able
+            to wrap instead — otherwise a narrow card pushes them off the edge. */}
+        <div className="mt-auto flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5 pt-3.5">
           <CoverageMeter approved={ev.approved_count} limit={cap ?? null} />
-          <div className="flex items-center gap-1.5">
+          <div className="flex min-w-0 flex-wrap items-center gap-1.5">
             <MyStateBadge
               requestStatus={ev.myRequestStatus}
               assigned={!!ev.myAssignmentId}

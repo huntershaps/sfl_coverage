@@ -269,13 +269,16 @@ export function backfillCoverageForImport(
 
   const rows = db
     .prepare(
-      `SELECT detected_assignees, result_event_id, parsed
+      `SELECT detected_assignees,
+              coalesce(result_event_id, duplicate_of) AS target_event_id,
+              parsed
          FROM import_items
-        WHERE import_id = ? AND result_event_id IS NOT NULL`,
+        WHERE import_id = ?
+          AND coalesce(result_event_id, duplicate_of) IS NOT NULL`,
     )
     .all(importId) as {
     detected_assignees: string;
-    result_event_id: number;
+    target_event_id: number;
     parsed: string;
   }[];
 
@@ -286,11 +289,47 @@ export function backfillCoverageForImport(
     backupsRecorded: 0,
   };
 
+  // Fields the doc knows that an event imported before Phase 2 will be missing.
+  const enrich = db.prepare(
+    `UPDATE events SET
+        needs_reporter = CASE WHEN ? = 1 THEN 1 ELSE needs_reporter END,
+        event_url    = coalesce(event_url, ?),
+        ticket_url   = coalesce(ticket_url, ?),
+        festival_url = coalesce(festival_url, ?),
+        press_url    = coalesce(press_url, ?),
+        is_festival  = CASE WHEN ? = 1 THEN 1 ELSE is_festival END,
+        doors_time   = coalesce(doors_time, ?),
+        end_time     = coalesce(end_time, ?),
+        updated_at   = datetime('now')
+      WHERE id = ?`,
+  );
+
   const tx = db.transaction(() => {
     for (const r of rows) {
-      const parsed = parseJson<{ needs_reporter?: boolean }>(r.parsed, {});
+      const parsed = parseJson<{
+        needs_reporter?: boolean;
+        event_url?: string | null;
+        ticket_url?: string | null;
+        festival_url?: string | null;
+        press_url?: string | null;
+        is_festival?: boolean;
+        doors_time?: string | null;
+        end_time?: string | null;
+      }>(r.parsed, {});
+
+      enrich.run(
+        parsed.needs_reporter ? 1 : 0,
+        parsed.event_url ?? null,
+        parsed.ticket_url ?? null,
+        parsed.festival_url ?? null,
+        parsed.press_url ?? null,
+        parsed.is_festival ? 1 : 0,
+        parsed.doors_time ?? null,
+        parsed.end_time ?? null,
+        r.target_event_id,
+      );
       const res = applyDetectedCoverage(actor, {
-        eventId: r.result_event_id,
+        eventId: r.target_event_id,
         detected: parseJson<DetectedAssignee[]>(r.detected_assignees, []),
         needsReporter: !!parsed.needs_reporter,
         nameMap,

@@ -495,7 +495,9 @@ export function commitImport(
           db.prepare(
             `UPDATE events SET title = ?, subtitle = ?, category = ?, start_datetime = ?,
                     time_tbd = ?, multi_day_end = ?, venue = ?, city = ?, address = ?,
-                    legacy_assignees = ?, updated_at = datetime('now')
+                    legacy_assignees = ?, doors_time = ?, end_time = ?,
+                    event_url = ?, ticket_url = ?, festival_url = ?, press_url = ?,
+                    is_festival = ?, needs_reporter = ?, updated_at = datetime('now')
               WHERE id = ?`,
           ).run(
             p.title,
@@ -508,6 +510,14 @@ export function commitImport(
             p.city ?? null,
             p.address ?? null,
             p.legacy_assignees ?? null,
+            p.doors_time ?? null,
+            p.end_time ?? null,
+            p.event_url ?? null,
+            p.ticket_url ?? null,
+            p.festival_url ?? null,
+            p.press_url ?? null,
+            p.is_festival ? 1 : 0,
+            p.needs_reporter ? 1 : 0,
             existingId,
           );
         } else {
@@ -539,6 +549,28 @@ export function commitImport(
             p.start_datetime,
             existingId,
           );
+        }
+
+        // Coverage recorded in the doc applies to an updated event just as it
+        // does to a new one — otherwise re-importing over events that already
+        // exist would migrate none of it.
+        const detectedForUpdate = parseJson<DetectedAssignee[]>(
+          (r.detected_assignees as string) ?? "[]",
+          [],
+        );
+        if (detectedForUpdate.length || p.needs_reporter) {
+          const res = applyDetectedCoverage(user, {
+            eventId: existingId,
+            detected: detectedForUpdate,
+            needsReporter: !!p.needs_reporter,
+            nameMap,
+            starredUserId,
+          });
+          migrated.assigned += res.assigned;
+          migrated.starred += res.starred;
+          migrated.backupsRecorded += res.backupsRecorded;
+          for (const n of res.unmapped)
+            if (!migrated.unmapped.includes(n)) migrated.unmapped.push(n);
         }
 
         updated++;

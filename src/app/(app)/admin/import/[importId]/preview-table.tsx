@@ -47,6 +47,7 @@ export type Item = {
   };
   issues: { field: string; level: "info" | "warning" | "error"; message: string }[];
   duplicate_of: number | null;
+  result_event_id: number | null;
   duplicate_score: number;
   duplicate_reasons: string[];
   duplicate_existing: {

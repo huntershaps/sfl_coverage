@@ -23,7 +23,8 @@
     "backup": "tsx scripts/backup.ts",
     "test:security": "tsx --conditions=react-server scripts/test-security.ts",
     "test:assignees": "tsx scripts/test-assignees.ts",
-    "test:migration": "tsx --conditions=react-server scripts/test-migration.ts"
+    "test:migration": "tsx --conditions=react-server scripts/test-migration.ts",
+    "test:responsive": "node scripts/check-responsive.mjs"
   },
   "dependencies": {
     "better-sqlite3": "^11.10.0",
@@ -38,6 +39,7 @@
     "@types/node": "^22.15.0",
     "@types/react": "^19.1.9",
     "@types/react-dom": "^19.1.7",
+    "playwright": "^1.62.1",
     "tailwindcss": "^4.1.13",
     "tsx": "^4.23.12",
     "typescript": "^5.8.3"

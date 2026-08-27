@@ -2,6 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { createBackup } from "@/lib/backup";
+import {
+  setNameMap,
+  setStarredUser,
+  backfillCoverageForImport,
+} from "@/lib/import-coverage";
 import { redirect } from "next/navigation";
 import {
   requireUser,
@@ -460,6 +465,80 @@ export async function createBackupAction(): Promise<AdminResult> {
     revalidatePath("/admin/backups");
     return {
       ok: `Backup taken — ${file.name} (${(file.bytes / 1024 / 1024).toFixed(2)} MB).`,
+    };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+/* ------------------------- mapping doc names to accounts ------------------ */
+
+/**
+ * Records which account each name in the coverage doc refers to. Nothing is
+ * assigned until this is saved — a first-name match alone is never enough to
+ * hand someone a credential.
+ */
+export async function setNameMapAction(
+  _prev: AdminResult,
+  formData: FormData,
+): Promise<AdminResult> {
+  try {
+    const actor = await requireAdmin();
+    const importId = Number(formData.get("importId"));
+
+    // Fields arrive as name:<doc name> = <userId or "">.
+    const map: Record<string, number> = {};
+    for (const [key, value] of formData.entries()) {
+      if (!key.startsWith("name:")) continue;
+      const userId = Number(value);
+      if (!userId) continue;
+      map[key.slice(5)] = userId;
+    }
+
+    setNameMap(actor, importId, map);
+
+    const starredRaw = String(formData.get("starredUserId") ?? "");
+    if (starredRaw !== "") {
+      setStarredUser(actor, importId, Number(starredRaw) || null);
+    }
+
+    revalidatePath(`/admin/import/${importId}`);
+    const n = Object.keys(map).length;
+    return { ok: `Saved — ${n} name${n === 1 ? "" : "s"} mapped to accounts.` };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+/**
+ * Applies the mapping to events that have already been imported, for when the
+ * mapping is filled in (or corrected) after the fact.
+ */
+export async function backfillCoverageAction(
+  _prev: AdminResult,
+  formData: FormData,
+): Promise<AdminResult> {
+  try {
+    const actor = await requireAdmin();
+    const importId = Number(formData.get("importId"));
+    const res = backfillCoverageForImport(actor, importId);
+
+    revalidatePath(`/admin/import/${importId}`);
+    revalidatePath("/events");
+    revalidatePath("/schedule");
+
+    if (!res.assigned && !res.starred) {
+      return {
+        ok: "Nothing new to apply — everyone mapped is already on their events.",
+      };
+    }
+    return {
+      ok:
+        `Applied — ${res.assigned} assignment${res.assigned === 1 ? "" : "s"}` +
+        `${res.starred ? `, ${res.starred} starred event${res.starred === 1 ? "" : "s"}` : ""}.` +
+        (res.unmapped.length
+          ? ` ${res.unmapped.length} name${res.unmapped.length === 1 ? "" : "s"} still unmapped.`
+          : ""),
     };
   } catch (e) {
     return fail(e);

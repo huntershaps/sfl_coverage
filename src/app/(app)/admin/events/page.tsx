@@ -111,7 +111,7 @@ export default async function ManageEventsPage({
           </Card>
         ) : (
           <Card className="overflow-hidden">
-            <div className="hidden border-b border-line bg-canvas px-4 py-2.5 text-[12px] font-semibold uppercase tracking-[0.08em] text-slate lg:grid lg:grid-cols-[1fr_130px_170px_140px_150px_92px] lg:gap-3">
+            <div className="hidden border-b border-line bg-canvas px-4 py-2.5 text-[12px] font-semibold uppercase tracking-[0.08em] text-slate xl:grid xl:grid-cols-[minmax(0,1fr)_116px_150px_118px_132px_84px] xl:gap-3">
               <span>Event</span>
               <span>Date</span>
               <span>Venue</span>
@@ -127,7 +127,7 @@ export default async function ManageEventsPage({
                   <div
                     key={ev.id}
                     className={cx(
-                      "px-4 py-3 transition-colors hover:bg-canvas lg:grid lg:grid-cols-[1fr_130px_170px_140px_150px_92px] lg:items-center lg:gap-3",
+                      "px-4 py-3 transition-colors hover:bg-canvas xl:grid xl:grid-cols-[minmax(0,1fr)_116px_150px_118px_132px_84px] xl:items-center xl:gap-3",
                       ev.status === "draft" && "bg-sky-500/[0.05]",
                       ev.status === "archived" && "opacity-60",
                     )}
@@ -152,7 +152,7 @@ export default async function ManageEventsPage({
                         >
                           {ev.title}
                         </Link>
-                        <div className="mt-0.5 flex items-center gap-1.5">
+                        <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
                           <EventStatusBadge status={ev.status as EventStatus} />
                           {ev.pending_count > 0 && (
                             <Badge tone="bg-brand-50 text-brand-700 ring-brand-200">
@@ -163,7 +163,7 @@ export default async function ManageEventsPage({
                       </div>
                     </div>
 
-                    <div className="mt-2 lg:mt-0">
+                    <div className="mt-2 min-w-0 xl:mt-0">
                       <p className="tnum text-[13px] text-body">
                         {fmtDate(ev.start_datetime, "long")}
                       </p>
@@ -172,7 +172,7 @@ export default async function ManageEventsPage({
                       </p>
                     </div>
 
-                    <div className="mt-1.5 min-w-0 lg:mt-0">
+                    <div className="mt-1.5 min-w-0 xl:mt-0">
                       <p className="line-clamp-1 text-[13px] text-body">
                         {ev.venue ?? "—"}
                       </p>
@@ -181,11 +181,11 @@ export default async function ManageEventsPage({
                       </p>
                     </div>
 
-                    <div className="mt-1.5 lg:mt-0">
+                    <div className="mt-1.5 min-w-0 xl:mt-0">
                       <CategoryBadge category={ev.category} />
                     </div>
 
-                    <div className="mt-2 lg:mt-0">
+                    <div className="mt-2 min-w-0 xl:mt-0">
                       <p className="tnum text-[13px] text-body">
                         {cap.approved}
                         {cap.limit != null ? ` / ${cap.limit}` : ""} assigned
@@ -197,7 +197,7 @@ export default async function ManageEventsPage({
                       )}
                     </div>
 
-                    <div className="mt-2 flex justify-start gap-1 lg:mt-0 lg:justify-end">
+                    <div className="mt-2 flex justify-start gap-1 xl:mt-0 xl:justify-end">
                       <Link
                         href={`/admin/events/${ev.id}/edit`}
                         className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[12.5px] font-medium text-body transition-colors hover:bg-canvas hover:text-ink"

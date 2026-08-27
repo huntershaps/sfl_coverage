@@ -2,6 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/rbac";
 import { getImport } from "@/lib/import";
+import { nameCandidates, getStarredUserId } from "@/lib/import-coverage";
+import { getDb } from "@/lib/db";
+import { NameMapPanel } from "./name-map";
 import { Card, EmptyState, LinkButton, IconUpload } from "@/components/ui";
 import { PreviewTable, type Item } from "./preview-table";
 import { fmtAgo, cx } from "@/lib/ui";
@@ -21,6 +24,16 @@ export default async function ImportPreviewPage({
   if (!imp) notFound();
 
   const items = imp.items as unknown as Item[];
+
+  // Everyone named in the doc, plus the accounts they could map to.
+  const candidates = nameCandidates(Number(importId));
+  const accounts = getDb()
+    .prepare(
+      `SELECT id, name, email, role FROM users
+        WHERE status != 'disabled' ORDER BY name COLLATE NOCASE`,
+    )
+    .all() as { id: number; name: string; email: string; role: string }[];
+  const starredCount = items.filter((i) => i.parsed?.needs_reporter).length;
   const stats = imp.stats;
   const formatNote = typeof stats.formatNote === "string" ? stats.formatNote : null;
   const isProse = stats.format === "prose";
@@ -126,11 +139,21 @@ export default async function ImportPreviewPage({
           />
         </Card>
       ) : (
+        <>
+        <NameMapPanel
+          importId={Number(importId)}
+          candidates={candidates}
+          accounts={accounts}
+          starredUserId={getStarredUserId(Number(importId))}
+          starredCount={starredCount}
+          committed={items.some((i) => i.result_event_id || i.duplicate_of)}
+        />
         <PreviewTable
           importId={Number(importId)}
           items={items}
           committed={imp.import_status !== "staged"}
         />
+        </>
       )}
     </div>
   );
