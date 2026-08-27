@@ -45,7 +45,9 @@ export type BackupStatus = {
 };
 
 function backupDir(): string {
-  const dir = path.resolve(BACKUP_DIR);
+  // The directory is configurable, which the bundler cannot analyse statically.
+  // Without the opt-out it traces the whole project into the server bundle.
+  const dir = path.resolve(/* turbopackIgnore: true */ BACKUP_DIR);
   fs.mkdirSync(dir, { recursive: true });
   return dir;
 }
@@ -73,7 +75,7 @@ export function backupStatus(): BackupStatus {
   const dbFile = process.env.DATABASE_PATH || "./data/sfi.db";
   let databaseBytes = 0;
   try {
-    databaseBytes = fs.statSync(path.resolve(dbFile)).size;
+    databaseBytes = fs.statSync(path.resolve(/* turbopackIgnore: true */ dbFile)).size;
   } catch {
     databaseBytes = 0;
   }

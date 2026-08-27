@@ -326,3 +326,65 @@ DATABASE_PATH=/absolute/path/to/sfi.db
 
 Session cookies are automatically `secure` when `NODE_ENV=production`, so serve
 it over HTTPS. Back up the SQLite file — it is the whole database.
+
+
+---
+
+## Migrating from the Google Doc
+
+The importer reads the doc's **HTML export**, not its text export. That matters:
+`?format=txt` throws away every hyperlink, including the venue directory at the
+top of the document and the ticket/festival links on individual events.
+
+### What the doc's own notation means
+
+Its legend says:
+
+> Confirmed requests = (name); Shows that Scott will be attending, but will need
+> a reporter = \*
+
+So the two markers are read as:
+
+| In the doc | Becomes |
+|---|---|
+| `(Reporter: Charity +1)` | A **confirmed assignment** for Charity, with one guest — not a request |
+| `(… ; Backup: Gleb)` | Recorded as a backup, not an assignment — a backup does not consume a spot |
+| trailing `*` | Scott assigned **and** the event stays open, because a reporter is still wanted |
+| `HR`, `CR`, `FB` | Resolved through the venue directory's abbreviations |
+| `6 - 10pm` | Show time 18:00, end time 22:00 |
+
+The trailing star is the one worth being careful about: treating it as "covered,
+done" would close events that still need somebody.
+
+### Names are never guessed
+
+Contributor names in the doc are first names. Before anything is assigned, the
+Super Admin maps each name to a real account, and picks which account the
+starred events belong to. An unmapped name is reported and left as text on the
+event — no account is invented, and nobody is assigned to someone else's
+credential on the strength of a first-name match.
+
+### Re-importing is safe
+
+The same doc can be imported repeatedly. Duplicates are detected on title, date,
+venue and links; nothing defaults to being imported again, and committing a
+re-import does not disturb existing coverage.
+
+```bash
+npm run test:migration
+```
+
+31 checks run the whole path against a scratch database, including the starred
+event and re-import scenarios.
+
+---
+
+## Backups
+
+**Administration → Backups** shows what is in the database, when the last backup
+ran, and takes one on demand. Backups use SQLite's online backup API — a plain
+file copy of a live WAL database can be torn.
+
+Exports (JSON, or CSV per table) are for reading elsewhere. They leave out
+password hashes and raw import payloads, and they are **not** a restore path:
+to restore, put a backup file back at `DATABASE_PATH` and restart.
